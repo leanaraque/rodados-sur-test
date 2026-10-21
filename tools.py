@@ -39,22 +39,9 @@ TOOLS = [
                 "properties": {
                     "reason": {"type": "string", "description": "Resumen breve de la consulta del cliente."},
                     "urgency": {"type": "string", "enum": ["alta", "media", "baja"]},
+                    "contact": {"type": "string", "description": "Nombre y teléfono o email del cliente, para que Marta lo contacte."},
                 },
-                "required": ["reason", "urgency"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "calculate_rental_cost",
-            "description": "Calcula el costo de alquilar una bicicleta urbana por una cantidad de días.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "days": {"type": "integer", "description": "Cantidad de días de alquiler."},
-                },
-                "required": ["days"],
+                "required": ["reason", "urgency", "contact"],
             },
         },
     },
@@ -79,7 +66,7 @@ def get_weather():
         return f"No se pudo consultar el clima: {error}"
 
 
-def hand_off_to_marta(reason, urgency):
+def hand_off_to_marta(reason, urgency, contact):
     """Guarda la derivación en derivaciones.json y devuelve una confirmación."""
     try:
         with open(HANDOFFS_FILE, encoding="utf-8") as file:
@@ -90,15 +77,11 @@ def hand_off_to_marta(reason, urgency):
         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "motivo": reason,
         "urgencia": urgency,
+        "contacto": contact,
     })
     with open(HANDOFFS_FILE, "w", encoding="utf-8") as file:
         json.dump(handoffs, file, indent=4, ensure_ascii=False)
     return f"Derivación registrada con urgencia {urgency}. Marta se va a comunicar con el cliente."
-
-
-def calculate_rental_cost(days):
-    """Calcula el costo del alquiler: 8.000 pesos por día."""
-    return f"Alquilar una bici urbana por {days} días cuesta {days * 8000} pesos."
 
 
 def execute_tool(name, arguments):
@@ -109,9 +92,7 @@ def execute_tool(name, arguments):
     if name == "get_weather":
         return get_weather()
     if name == "hand_off_to_marta":
-        return hand_off_to_marta(args["reason"], args["urgency"])
-    if name == "calculate_rental_cost":
-        return calculate_rental_cost(args["days"])
+        return hand_off_to_marta(args["reason"], args["urgency"], args.get("contact", "sin datos"))
     return f"Herramienta desconocida: {name}."
 
 
@@ -119,5 +100,4 @@ if __name__ == "__main__":
     print(execute_tool("get_order_status", '{"order_id": "1043"}'))
     print(execute_tool("get_order_status", '{"order_id": "9999"}'))
     print(execute_tool("get_weather", "{}"))
-    print(execute_tool("hand_off_to_marta", '{"reason": "Prueba de derivación", "urgency": "baja"}'))
-    print(execute_tool("calculate_rental_cost", '{"days": 3}'))
+    print(execute_tool("hand_off_to_marta", '{"reason": "Prueba de derivación", "urgency": "baja", "contact": "Laura, 11 5555-1234"}'))
